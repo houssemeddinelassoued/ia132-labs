@@ -2,6 +2,32 @@
 # Écrit en 2017, « ça marche, on n'y touche pas ». Jusqu'à aujourd'hui.
 
 
+_SEUIL_POIDS_LEGER = 2
+_SEUIL_POIDS_STANDARD = 10
+_TARIFS_LIVRAISON = {
+    "QC": {"leger": 8, "standard": 15, "supplement": 1.5},
+    "ON": {"leger": 10, "standard": 18, "supplement": 1.75},
+}
+_TARIF_LIVRAISON_DEFAUT = {"leger": 14, "standard": 25, "supplement": 2.5}
+
+
+def _calculer_livraison(poids, region):
+    """Applique les paliers de poids au tarif régional ou au tarif par défaut."""
+    if region == "QC":
+        tarif = _TARIFS_LIVRAISON["QC"]
+    elif region == "ON":
+        tarif = _TARIFS_LIVRAISON["ON"]
+    else:
+        tarif = _TARIF_LIVRAISON_DEFAUT
+
+    if poids <= _SEUIL_POIDS_LEGER:
+        return tarif["leger"]
+    elif poids <= _SEUIL_POIDS_STANDARD:
+        return tarif["standard"]
+    else:
+        return tarif["standard"] + (poids - _SEUIL_POIDS_STANDARD) * tarif["supplement"]
+
+
 def _calculer_sous_total(lignes):
     """Additionne les montants des lignes dans leur ordre d'origine."""
     sous_total = 0
@@ -61,30 +87,7 @@ def traiter(c, r, p):
             continue
 
         sous_total = _calculer_sous_total(commande["lignes"])
-        if r == "QC":
-            if commande["poids"] <= 2:
-                frais_livraison = 8
-            else:
-                if commande["poids"] <= 10:
-                    frais_livraison = 15
-                else:
-                    frais_livraison = 15 + (commande["poids"] - 10) * 1.5
-        elif r == "ON":
-            if commande["poids"] <= 2:
-                frais_livraison = 10
-            else:
-                if commande["poids"] <= 10:
-                    frais_livraison = 18
-                else:
-                    frais_livraison = 18 + (commande["poids"] - 10) * 1.75
-        else:
-            if commande["poids"] <= 2:
-                frais_livraison = 14
-            else:
-                if commande["poids"] <= 10:
-                    frais_livraison = 25
-                else:
-                    frais_livraison = 25 + (commande["poids"] - 10) * 2.5
+        frais_livraison = _calculer_livraison(commande["poids"], r)
         if p:
             frais_livraison = _appliquer_avantage_premium(frais_livraison, sous_total)
         priorite = _determiner_priorite(sous_total)
