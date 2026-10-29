@@ -2,6 +2,34 @@
 # Écrit en 2017, « ça marche, on n'y touche pas ». Jusqu'à aujourd'hui.
 
 
+def _calculer_sous_total(lignes):
+    """Additionne les montants des lignes dans leur ordre d'origine."""
+    sous_total = 0
+    for ligne in lignes:
+        sous_total = sous_total + ligne["prix"] * ligne["qte"]
+    return sous_total
+
+
+def _appliquer_avantage_premium(frais_livraison, sous_total):
+    """Applique la gratuité au-delà de 100, sinon la réduction de moitié."""
+    if sous_total > 100:
+        frais_livraison = 0
+    else:
+        frais_livraison = frais_livraison / 2
+    return frais_livraison
+
+
+def _determiner_priorite(sous_total):
+    """Détermine la priorité à partir du sous-total avant livraison."""
+    if sous_total > 500:
+        priorite = "haute"
+    elif sous_total > 100:
+        priorite = "normale"
+    else:
+        priorite = "basse"
+    return priorite
+
+
 def traiter(c, r, p):
     """Calcule le total, la livraison et la priorité des commandes admissibles.
 
@@ -32,9 +60,7 @@ def traiter(c, r, p):
             print("poids invalide " + str(commande["id"]))
             continue
 
-        sous_total = 0
-        for ligne in commande["lignes"]:
-            sous_total = sous_total + ligne["prix"] * ligne["qte"]
+        sous_total = _calculer_sous_total(commande["lignes"])
         if r == "QC":
             if commande["poids"] <= 2:
                 frais_livraison = 8
@@ -60,15 +86,7 @@ def traiter(c, r, p):
                 else:
                     frais_livraison = 25 + (commande["poids"] - 10) * 2.5
         if p:
-            if sous_total > 100:
-                frais_livraison = 0
-            else:
-                frais_livraison = frais_livraison / 2
-        if sous_total > 500:
-            priorite = "haute"
-        elif sous_total > 100:
-            priorite = "normale"
-        else:
-            priorite = "basse"
+            frais_livraison = _appliquer_avantage_premium(frais_livraison, sous_total)
+        priorite = _determiner_priorite(sous_total)
         resultats.append({"id": commande["id"], "total": round(sous_total + frais_livraison, 2), "livraison": round(frais_livraison, 2), "priorite": priorite})
     return resultats
