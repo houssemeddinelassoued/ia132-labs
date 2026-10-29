@@ -26,47 +26,49 @@ def traiter(c, r, p):
     """
     resultats = []
     for commande in c:
-        if commande["statut"] != "annulee":
-            if commande["poids"] > 0:
-                sous_total = 0
-                for ligne in commande["lignes"]:
-                    sous_total = sous_total + ligne["prix"] * ligne["qte"]
-                if r == "QC":
-                    if commande["poids"] <= 2:
-                        frais_livraison = 8
-                    else:
-                        if commande["poids"] <= 10:
-                            frais_livraison = 15
-                        else:
-                            frais_livraison = 15 + (commande["poids"] - 10) * 1.5
-                elif r == "ON":
-                    if commande["poids"] <= 2:
-                        frais_livraison = 10
-                    else:
-                        if commande["poids"] <= 10:
-                            frais_livraison = 18
-                        else:
-                            frais_livraison = 18 + (commande["poids"] - 10) * 1.75
-                else:
-                    if commande["poids"] <= 2:
-                        frais_livraison = 14
-                    else:
-                        if commande["poids"] <= 10:
-                            frais_livraison = 25
-                        else:
-                            frais_livraison = 25 + (commande["poids"] - 10) * 2.5
-                if p:
-                    if sous_total > 100:
-                        frais_livraison = 0
-                    else:
-                        frais_livraison = frais_livraison / 2
-                if sous_total > 500:
-                    priorite = "haute"
-                elif sous_total > 100:
-                    priorite = "normale"
-                else:
-                    priorite = "basse"
-                resultats.append({"id": commande["id"], "total": round(sous_total + frais_livraison, 2), "livraison": round(frais_livraison, 2), "priorite": priorite})
+        if commande["statut"] == "annulee":
+            continue
+        if not (commande["poids"] > 0):
+            print("poids invalide " + str(commande["id"]))
+            continue
+
+        sous_total = 0
+        for ligne in commande["lignes"]:
+            sous_total = sous_total + ligne["prix"] * ligne["qte"]
+        if r == "QC":
+            if commande["poids"] <= 2:
+                frais_livraison = 8
             else:
-                print("poids invalide " + str(commande["id"]))
+                if commande["poids"] <= 10:
+                    frais_livraison = 15
+                else:
+                    frais_livraison = 15 + (commande["poids"] - 10) * 1.5
+        elif r == "ON":
+            if commande["poids"] <= 2:
+                frais_livraison = 10
+            else:
+                if commande["poids"] <= 10:
+                    frais_livraison = 18
+                else:
+                    frais_livraison = 18 + (commande["poids"] - 10) * 1.75
+        else:
+            if commande["poids"] <= 2:
+                frais_livraison = 14
+            else:
+                if commande["poids"] <= 10:
+                    frais_livraison = 25
+                else:
+                    frais_livraison = 25 + (commande["poids"] - 10) * 2.5
+        if p:
+            if sous_total > 100:
+                frais_livraison = 0
+            else:
+                frais_livraison = frais_livraison / 2
+        if sous_total > 500:
+            priorite = "haute"
+        elif sous_total > 100:
+            priorite = "normale"
+        else:
+            priorite = "basse"
+        resultats.append({"id": commande["id"], "total": round(sous_total + frais_livraison, 2), "livraison": round(frais_livraison, 2), "priorite": priorite})
     return resultats
