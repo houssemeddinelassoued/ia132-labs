@@ -34,8 +34,9 @@ def test_taux_occupation_simple():
 
 
 # ── Les tickets du support ─────────────────────────────────────────────────
-def test_inc101_salle_sans_reservation():
-    assert taux_occupation([A, B], "B-204") == 0
+@pytest.mark.parametrize("reservations", [[], [A, B]])
+def test_inc101_salle_sans_reservation(reservations):
+    assert taux_occupation(reservations, "B-204") == 0
 
 
 def test_inc102_pas_de_doublon_entre_deux_pages():

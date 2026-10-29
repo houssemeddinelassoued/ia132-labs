@@ -43,6 +43,8 @@ def paginer(items: list, page: int, taille: int = 10) -> list:
 def taux_occupation(reservations: list[Reservation], salle: str, heures_ouvertes: int = 10) -> float:
     """Part des heures d'ouverture occupées pour une salle, sur les jours où elle est réservée."""
     de_la_salle = [r for r in reservations if r.salle == salle]
+    if not de_la_salle:
+        return 0.0
     jours = {r.debut.date() for r in de_la_salle}
     heures = sum(duree_heures(r) for r in de_la_salle)
     return round(heures / (heures_ouvertes * len(jours)), 2)
