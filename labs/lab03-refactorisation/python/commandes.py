@@ -3,50 +3,70 @@
 
 
 def traiter(c, r, p):
-    # c = commandes, r = region, p = client premium
-    res = []
-    for x in c:
-        if x["statut"] != "annulee":
-            if x["poids"] > 0:
-                t = 0
-                for l in x["lignes"]:
-                    t = t + l["prix"] * l["qte"]
+    """Calcule le total, la livraison et la priorité des commandes admissibles.
+
+    Paramètres :
+        c : itérable de dictionnaires de commande. Chaque commande traitée
+            contient id, statut, poids (nombre) et lignes (itérable de
+            dictionnaires avec prix et qte numériques).
+        r : région de livraison ; "QC" et "ON" ont leurs propres tarifs,
+            toute autre valeur utilise le tarif par défaut.
+        p : indicateur de client premium, évalué selon sa valeur de vérité.
+
+    Retourne une liste de dictionnaires, dans l'ordre des commandes retenues,
+    avec id, total (sous-total plus livraison, arrondi à deux décimales),
+    livraison (frais arrondis à deux décimales) et priorite ("haute",
+    "normale" ou "basse"). Les montants et les poids doivent utiliser les
+    mêmes unités que les tarifs et les seuils fixes de cette fonction.
+
+    Les commandes de statut "annulee" sont ignorées. Les autres commandes
+    dont le poids n'est pas strictement positif sont exclues avec affichage
+    du message "poids invalide " suivi de leur identifiant.
+    Les noms c, r et p sont conservés pour les appels par arguments nommés.
+    """
+    resultats = []
+    for commande in c:
+        if commande["statut"] != "annulee":
+            if commande["poids"] > 0:
+                sous_total = 0
+                for ligne in commande["lignes"]:
+                    sous_total = sous_total + ligne["prix"] * ligne["qte"]
                 if r == "QC":
-                    if x["poids"] <= 2:
-                        f = 8
+                    if commande["poids"] <= 2:
+                        frais_livraison = 8
                     else:
-                        if x["poids"] <= 10:
-                            f = 15
+                        if commande["poids"] <= 10:
+                            frais_livraison = 15
                         else:
-                            f = 15 + (x["poids"] - 10) * 1.5
+                            frais_livraison = 15 + (commande["poids"] - 10) * 1.5
                 elif r == "ON":
-                    if x["poids"] <= 2:
-                        f = 10
+                    if commande["poids"] <= 2:
+                        frais_livraison = 10
                     else:
-                        if x["poids"] <= 10:
-                            f = 18
+                        if commande["poids"] <= 10:
+                            frais_livraison = 18
                         else:
-                            f = 18 + (x["poids"] - 10) * 1.75
+                            frais_livraison = 18 + (commande["poids"] - 10) * 1.75
                 else:
-                    if x["poids"] <= 2:
-                        f = 14
+                    if commande["poids"] <= 2:
+                        frais_livraison = 14
                     else:
-                        if x["poids"] <= 10:
-                            f = 25
+                        if commande["poids"] <= 10:
+                            frais_livraison = 25
                         else:
-                            f = 25 + (x["poids"] - 10) * 2.5
+                            frais_livraison = 25 + (commande["poids"] - 10) * 2.5
                 if p:
-                    if t > 100:
-                        f = 0
+                    if sous_total > 100:
+                        frais_livraison = 0
                     else:
-                        f = f / 2
-                if t > 500:
-                    pr = "haute"
-                elif t > 100:
-                    pr = "normale"
+                        frais_livraison = frais_livraison / 2
+                if sous_total > 500:
+                    priorite = "haute"
+                elif sous_total > 100:
+                    priorite = "normale"
                 else:
-                    pr = "basse"
-                res.append({"id": x["id"], "total": round(t + f, 2), "livraison": round(f, 2), "priorite": pr})
+                    priorite = "basse"
+                resultats.append({"id": commande["id"], "total": round(sous_total + frais_livraison, 2), "livraison": round(frais_livraison, 2), "priorite": priorite})
             else:
-                print("poids invalide " + str(x["id"]))
-    return res
+                print("poids invalide " + str(commande["id"]))
+    return resultats
