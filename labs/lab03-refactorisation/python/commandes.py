@@ -91,5 +91,13 @@ def traiter(c, r, p):
         if p:
             frais_livraison = _appliquer_avantage_premium(frais_livraison, sous_total)
         priorite = _determiner_priorite(sous_total)
-        resultats.append({"id": commande["id"], "total": round(sous_total + frais_livraison, 2), "livraison": round(frais_livraison, 2), "priorite": priorite})
+        identifiant = commande["id"]
+        total_arrondi = round(sous_total + frais_livraison, 2)
+        livraison_arrondie = round(frais_livraison, 2)
+        resultats.append({
+            "id": identifiant,
+            "total": total_arrondi,
+            "livraison": livraison_arrondie,
+            "priorite": priorite,
+        })
     return resultats
