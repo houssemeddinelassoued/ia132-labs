@@ -2,8 +2,10 @@
 
     python charge.py                        # 2 000 requêtes, 20 utilisateurs simultanés
     python charge.py 5000 50                # 5 000 requêtes, 50 utilisateurs
+    python charge.py 5000 100 1.0           # scénario « pic » : 100 % de créations
 
-Scénario : 1 création de lien pour 4 visites (80 % de lectures). L'API démarre dans le processus.
+Scénario par défaut : 1 création de lien pour 4 visites (80 % de lectures).
+Le 3e argument règle la part de créations (0 à 1). L'API démarre dans le processus.
 Objectif de service (à vérifier) : p95 < 50 ms et moins de 1 % d'erreurs.
 """
 
@@ -31,10 +33,10 @@ class SansRedirection(urllib.request.HTTPRedirectHandler):
 ouvrir = urllib.request.build_opener(SansRedirection).open
 
 
-def appel(base: str, codes: list[str]) -> tuple[float, bool]:
+def appel(base: str, codes: list[str], part_creations: float = 0.2) -> tuple[float, bool]:
     t0 = time.perf_counter()
     try:
-        if not codes or random.random() < 0.2:  # noqa: S311 (simulation, pas de cryptographie)
+        if not codes or random.random() < part_creations:  # noqa: S311 (simulation, pas de cryptographie)
             corps = json.dumps({"url": f"https://exemple.ca/{random.randrange(10**6)}"}).encode()  # noqa: S311
             req = urllib.request.Request(base + "/liens", data=corps, method="POST")
             with ouvrir(req, timeout=5) as r:
@@ -56,6 +58,9 @@ def main() -> int:
         sys.stdout.reconfigure(encoding="utf-8")
     total = int(sys.argv[1]) if len(sys.argv) > 1 else 2_000
     utilisateurs = int(sys.argv[2]) if len(sys.argv) > 2 else 20
+    part_creations = float(sys.argv[3]) if len(sys.argv) > 3 else 0.2
+    if not 0 <= part_creations <= 1:
+        raise ValueError(f"part de créations hors de [0, 1] : {part_creations}")
     srv = creer_serveur()
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{srv.server_address[1]}"
@@ -63,7 +68,7 @@ def main() -> int:
 
     t0 = time.perf_counter()
     with ThreadPoolExecutor(utilisateurs) as pool:
-        resultats = list(pool.map(lambda _: appel(base, codes), range(total)))
+        resultats = list(pool.map(lambda _: appel(base, codes, part_creations), range(total)))
     duree = time.perf_counter() - t0
     srv.shutdown()
 
