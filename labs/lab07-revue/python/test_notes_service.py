@@ -60,6 +60,27 @@ def test_securite_mots_de_passe_sales_et_lents(service):
     assert hashlib.md5(b"meme-mot-de-passe").hexdigest() not in (h1, h2), "MD5 n'est pas fait pour les mots de passe"
 
 
+def test_connexion_apres_reouverture_de_la_base(tmp_path):
+    chemin = str(tmp_path / "notes.db")
+    premier_service = NotesService(chemin)
+    uid = premier_service.inscrire("ana@exemple.ca", "Café-Secret-42")
+    premier_service.bd.close()
+
+    second_service = NotesService(chemin)
+    try:
+        assert second_service.connecter("ana@exemple.ca", "Café-Secret-42") == uid
+        assert second_service.connecter("ana@exemple.ca", "mauvais") is None
+    finally:
+        second_service.bd.close()
+
+
+@pytest.mark.parametrize("empreinte", ["invalide", "pbkdf2_sha256$abc$00$00"])
+def test_empreinte_invalide_refuse_la_connexion(service, empreinte):
+    uid = service.inscrire("ana@exemple.ca", "Secret-42")
+    service.bd.execute("update users set password = ? where id = ?", (empreinte, uid))
+    assert service.connecter("ana@exemple.ca", "Secret-42") is None
+
+
 def test_securite_pas_d_acces_aux_notes_des_autres(service):
     ana = service.inscrire("ana@exemple.ca", "Correct-Cheval-42")
     bob = service.inscrire("bob@exemple.ca", "Batterie-Agrafe-7")
