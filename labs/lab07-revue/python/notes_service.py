@@ -5,10 +5,10 @@ Votre mission : la REVUE de cette PR, avec l'aide de l'IA (voir README).
 
 import hashlib
 import hmac
+import os
 import secrets
 import sqlite3
 
-SECRET_KEY = "s3cr3t-prod-2026"
 ITERATIONS_MOT_DE_PASSE = 600_000
 
 SCHEMA = """
@@ -49,6 +49,9 @@ def _verifier_mot_de_passe(mot_de_passe: str, valeur_stockee: str) -> bool:
 
 class NotesService:
     def __init__(self, chemin_bd: str = ":memory:"):
+        self._secret = os.environ.get("NOTES_SECRET")
+        if not self._secret or not self._secret.strip():
+            raise ValueError("La variable d'environnement NOTES_SECRET doit être définie et non vide.")
         self.bd = sqlite3.connect(chemin_bd)
         self.bd.executescript(SCHEMA)
 
@@ -83,4 +86,4 @@ class NotesService:
         return row[0] if row else None
 
     def jeton(self, user_id):
-        return hashlib.sha256(f"{user_id}:{SECRET_KEY}".encode()).hexdigest()
+        return hashlib.sha256(f"{user_id}:{self._secret}".encode()).hexdigest()

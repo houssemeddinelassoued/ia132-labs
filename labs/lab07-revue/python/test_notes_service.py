@@ -60,7 +60,8 @@ def test_securite_mots_de_passe_sales_et_lents(service):
     assert hashlib.md5(b"meme-mot-de-passe").hexdigest() not in (h1, h2), "MD5 n'est pas fait pour les mots de passe"
 
 
-def test_connexion_apres_reouverture_de_la_base(tmp_path):
+def test_connexion_apres_reouverture_de_la_base(tmp_path, monkeypatch):
+    monkeypatch.setenv("NOTES_SECRET", "secret-de-test")
     chemin = str(tmp_path / "notes.db")
     premier_service = NotesService(chemin)
     uid = premier_service.inscrire("ana@exemple.ca", "Café-Secret-42")
@@ -91,3 +92,25 @@ def test_securite_pas_d_acces_aux_notes_des_autres(service):
 def test_securite_aucun_secret_dans_le_code():
     source = Path(__file__).with_name("notes_service.py").read_text(encoding="utf-8")
     assert not re.search(r"SECRET\w*\s*=\s*['\"]", source), "secret en dur : lisez-le dans os.environ"
+
+
+@pytest.mark.parametrize("secret", [None, "", "   "])
+def test_secret_obligatoire(monkeypatch, secret):
+    if secret is None:
+        monkeypatch.delenv("NOTES_SECRET", raising=False)
+    else:
+        monkeypatch.setenv("NOTES_SECRET", secret)
+    with pytest.raises(ValueError, match="NOTES_SECRET"):
+        NotesService()
+
+
+def test_jeton_depend_du_secret_de_lenvironnement(monkeypatch):
+    monkeypatch.setenv("NOTES_SECRET", "premier-secret-de-test")
+    premier_service = NotesService()
+    monkeypatch.setenv("NOTES_SECRET", "second-secret-de-test")
+    second_service = NotesService()
+    try:
+        assert premier_service.jeton(1) != second_service.jeton(1)
+    finally:
+        premier_service.bd.close()
+        second_service.bd.close()
