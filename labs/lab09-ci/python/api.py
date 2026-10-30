@@ -24,7 +24,7 @@ def url_valide(url: object) -> bool:
     if not isinstance(url, str) or len(url) > TAILLE_MAX_URL:
         return False
     p = urlparse(url)
-    return p.scheme in {"http", "https"} and bool(p.netloc)
+    return p.scheme in {"https"} and bool(p.netloc)
 
 
 def nouveau_code() -> str:
