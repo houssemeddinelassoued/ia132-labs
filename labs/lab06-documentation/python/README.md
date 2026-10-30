@@ -74,3 +74,29 @@ python -m pytest test_geo.py
 - `dans_le_rayon` inclut les points exactement à la limite du rayon selon la distance arrondie. Un rayon négatif déclenche une `ValueError`.
 - `plus_proche` exclut les points égaux à l'origine selon leurs trois attributs (`nom`, `lat`, `lon`). Deux points de noms différents aux mêmes coordonnées restent donc des candidats. La fonction renvoie `None` sans candidat et retient le premier en cas d'égalité de distance.
 - Les recherches parcourent la liste de points sans index spatial ; le module convient surtout aux petits ensembles de données.
+
+## Changelog
+
+### [Non publié]
+
+Cette entrée résume l'historique du dépôt retourné par `git log --oneline -15`
+(11 commits disponibles, jusqu'à `56141c3`). Elle couvre plusieurs laboratoires.
+
+#### Ajouté
+
+- **2026-10-29** — Laboratoires de formation IA132 et leurs fichiers initiaux (`f984a54`).
+- **2026-10-29** — Guide au format PDF (`95e382f`).
+- **2026-10-30** — Documentation du module `geo` : docstrings Google en français, exemples doctest et README présentant l'installation, l'utilisation et les limites (`56141c3`).
+
+#### Modifié
+
+- **2026-10-29** — Refactorisation du code : noms de variables et contrat précisés, imbrication réduite, calculs indépendants extraits, tarifs de livraison centralisés et construction du résultat clarifiée (`ee772a6`, `9e265f6`, `b2ab9c2`, `a182f3c`, `c341db4`).
+- **2026-10-29** — Optimisation du module d'analyse du laboratoire 5 (`f5507ec`).
+
+#### Corrigé
+
+- **2026-10-29** — Retour d'un taux d'occupation nul pour une salle sans réservation, y compris lorsque la liste est vide (`d3a60af`).
+- **2026-10-29** — Pagination sans élément supplémentaire ni doublon entre deux pages (`560ccd0`).
+- **2026-10-29** — Autorisation des réservations qui se suivent sans se chevaucher (`560ccd0`).
+- **2026-10-29** — Arrondi des coûts au cent, avec les demi-centimes arrondis vers le haut (`560ccd0`).
+- **2026-10-29** — Calcul de la durée complète des réservations couvrant plusieurs jours (`560ccd0`).
