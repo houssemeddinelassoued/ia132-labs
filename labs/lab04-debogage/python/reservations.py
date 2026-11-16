@@ -22,7 +22,7 @@ def duree_heures(r: Reservation) -> float:
 
 def se_chevauchent(a: Reservation, b: Reservation) -> bool:
     """Vrai si les deux réservations occupent la même salle au même moment."""
-    return a.salle == b.salle and a.debut <= b.fin and b.debut <= a.fin
+    return a.salle == b.salle and a.debut < b.fin and b.debut < a.fin
 
 
 def peut_reserver(existantes: list[Reservation], nouvelle: Reservation) -> bool:
