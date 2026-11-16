@@ -45,4 +45,7 @@ def taux_occupation(reservations: list[Reservation], salle: str, heures_ouvertes
     de_la_salle = [r for r in reservations if r.salle == salle]
     jours = {r.debut.date() for r in de_la_salle}
     heures = sum(duree_heures(r) for r in de_la_salle)
-    return round(heures / (heures_ouvertes * len(jours)), 2)
+    capacite = heures_ouvertes * len(jours)
+    if capacite == 0:
+        raise ValueError(f"Aucune période ouverte pour la salle {salle!r}")
+    return round(heures / capacite, 2)

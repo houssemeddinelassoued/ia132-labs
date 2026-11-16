@@ -19,7 +19,10 @@ RESERVATIONS = [
 def afficher() -> None:
     print("Occupation des salles · lundi 2 novembre")
     for salle in SALLES:
-        print(f"  {salle} : {taux_occupation(RESERVATIONS, salle):.0%}")
+        try:
+            print(f"  {salle} : {taux_occupation(RESERVATIONS, salle):.0%}")
+        except ValueError:
+            print(f"  {salle} : n/a (aucune période ouverte)")
 
 
 if __name__ == "__main__":
