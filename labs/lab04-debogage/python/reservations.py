@@ -37,7 +37,7 @@ def cout(r: Reservation) -> float:
 def paginer(items: list, page: int, taille: int = 10) -> list:
     """Retourne la page `page` (1 = première page) de `taille` éléments."""
     debut = (page - 1) * taille
-    return items[debut : debut + taille + 1]
+    return items[debut : debut + taille]
 
 
 def taux_occupation(reservations: list[Reservation], salle: str, heures_ouvertes: int = 10) -> float:
