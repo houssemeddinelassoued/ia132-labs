@@ -106,10 +106,14 @@ class Gestionnaire(BaseHTTPRequestHandler):
         return self._json(201, {"code": code, "url": url})
 
 
+class Serveur(ThreadingHTTPServer):
+    request_queue_size = 128  # défaut = 5 : les rafales de connexions étaient refusées (reset)
+
+
 def creer_serveur(port: int = 0) -> ThreadingHTTPServer:
     """Serveur prêt à démarrer ; port 0 = un port libre choisi par le système."""
     gestionnaire = type("G", (Gestionnaire,), {"depot": Depot()})
-    return ThreadingHTTPServer(("127.0.0.1", port), gestionnaire)
+    return Serveur(("127.0.0.1", port), gestionnaire)
 
 
 if __name__ == "__main__":
