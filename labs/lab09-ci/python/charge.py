@@ -21,6 +21,7 @@ from api import creer_serveur
 
 P95_MAX_MS = 50
 ERREURS_MAX = 0.01
+PART_CREATIONS = 0.2  # 0.2 = scénario « lecture » ; 1.0 = scénario « pic » (100 % de créations)
 
 
 class SansRedirection(urllib.request.HTTPRedirectHandler):
@@ -34,7 +35,7 @@ ouvrir = urllib.request.build_opener(SansRedirection).open
 def appel(base: str, codes: list[str]) -> tuple[float, bool]:
     t0 = time.perf_counter()
     try:
-        if not codes or random.random() < 0.2:  # noqa: S311 (simulation, pas de cryptographie)
+        if not codes or random.random() < PART_CREATIONS:  # noqa: S311 (simulation, pas de cryptographie)
             corps = json.dumps({"url": f"https://exemple.ca/{random.randrange(10**6)}"}).encode()  # noqa: S311
             req = urllib.request.Request(base + "/liens", data=corps, method="POST")
             with ouvrir(req, timeout=5) as r:
@@ -56,6 +57,9 @@ def main() -> int:
         sys.stdout.reconfigure(encoding="utf-8")
     total = int(sys.argv[1]) if len(sys.argv) > 1 else 2_000
     utilisateurs = int(sys.argv[2]) if len(sys.argv) > 2 else 20
+    global PART_CREATIONS
+    if len(sys.argv) > 3:  # ex. « charge.py 2000 20 1.0 » = scénario pic
+        PART_CREATIONS = float(sys.argv[3])
     srv = creer_serveur()
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{srv.server_address[1]}"

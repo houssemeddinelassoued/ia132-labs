@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  # TODO 1 : lancer aussi le pipeline sur chaque pull request
+  # -> fait : sans filtre de branche, toute PR déclenche le pipeline (c'est ce qui permet de la bloquer).
+  pull_request:
+
+permissions:
+  contents: read # droits minimaux du jeton automatique de GitHub : lecture seule du dépôt
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    # TODO 2 : matrice sur 2 versions de Python (ex. 3.11 et 3.13)
+    # -> fait : le job est exécuté une fois par version ; fail-fast: false laisse l'autre version
+    #    se terminer même si la première échoue, pour voir tous les échecs d'un coup.
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          # TODO 3 : activer le cache pip
+          # -> fait : les paquets téléchargés sont réutilisés d'une exécution à l'autre ;
+          #    la clé de cache dépend du contenu de requirements-dev.txt.
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      # TODO 4 : lint avec ruff sur labs/lab09-ci
+      # -> fait : s'exécute avant les tests, un style fautif échoue vite et à moindre coût.
+      - run: ruff check labs/lab09-ci
+      # TODO 5 : tests du lab 09 avec couverture, en échec sous 80 %
+      # -> fait : --cov-fail-under=80 fait échouer l'étape (donc la PR) si la couverture de api.py baisse.
+      #    test_workflow.py est exclu : il vérifie ce fichier ci.yml, pas l'API.
+      - run: pytest labs/lab09-ci/python/test_api_unitaire.py labs/lab09-ci/python/test_integration.py --cov=api --cov-report=term-missing --cov-fail-under=80
+
+  # TODO 6 : un second job « typescript » : setup-node (Node 22) puis node --test sur le lab 09
+  # -> fait : job indépendant, il tourne en parallèle du job Python.
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test "labs/lab09-ci/typescript/*.test.ts"

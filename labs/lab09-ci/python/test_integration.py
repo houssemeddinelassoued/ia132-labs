@@ -47,6 +47,68 @@ def test_sante(serveur):
     assert (statut, corps) == (200, {"statut": "ok"})
 
 
-# À vous : demandez à l'IA les scénarios d'intégration, puis écrivez-les ici.
-# Pistes : créer puis suivre un lien (201 → 302 + Location), statistiques après 3 visites,
-# URL invalide (400), JSON invalide (400), code inconnu (404), créations concurrentes.
+URL = "https://exemple.org/page"
+
+
+def creer(serveur, url=URL):
+    statut, _, corps = requete(serveur, "POST", "/liens", {"url": url})
+    assert statut == 201
+    return corps["code"]
+
+
+def test_creer_puis_suivre_un_lien(serveur):
+    statut, _, corps = requete(serveur, "POST", "/liens", {"url": URL})
+    assert statut == 201
+    assert corps["url"] == URL
+    assert len(corps["code"]) == 6
+
+    statut, entetes, _ = requete(serveur, "GET", f"/l/{corps['code']}")
+    assert statut == 302
+    assert entetes["Location"] == URL
+
+
+def test_statistiques_apres_trois_visites(serveur):
+    code = creer(serveur)
+    for _ in range(3):
+        requete(serveur, "GET", f"/l/{code}")
+    statut, _, corps = requete(serveur, "GET", f"/stats/{code}")
+    assert statut == 200
+    assert corps == {"code": code, "url": URL, "clics": 3}
+
+
+@pytest.mark.parametrize("corps", [{"url": "ftp://exemple.org"}, {"url": "pas une url"}, {"url": 42}, {}, []])
+def test_url_invalide_renvoie_400(serveur, corps):
+    statut, _, reponse = requete(serveur, "POST", "/liens", corps)
+    assert statut == 400
+    assert "erreur" in reponse
+
+
+def test_url_trop_longue_renvoie_400(serveur):
+    statut, _, _ = requete(serveur, "POST", "/liens", {"url": "https://exemple.org/" + "a" * 2_048})
+    assert statut == 400
+
+
+def test_json_invalide_renvoie_400(serveur):
+    req = urllib.request.Request(serveur + "/liens", data=b"{pas du json", method="POST")
+    with pytest.raises(urllib.error.HTTPError) as exc:
+        ouvrir(req, timeout=5)
+    assert exc.value.code == 400
+
+
+@pytest.mark.parametrize("chemin", ["/l/inconnu", "/stats/inconnu"])
+def test_code_inconnu_renvoie_404(serveur, chemin):
+    statut, _, _ = requete(serveur, "GET", chemin)
+    assert statut == 404
+
+
+def test_route_inconnue_renvoie_404(serveur):
+    assert requete(serveur, "GET", "/nimporte")[0] == 404
+    assert requete(serveur, "POST", "/autre", {"url": URL})[0] == 404
+
+
+def test_200_creations_concurrentes_donnent_200_codes_uniques(serveur):
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=20) as pool:
+        codes = list(pool.map(lambda _: creer(serveur), range(200)))
+    assert len(set(codes)) == 200
